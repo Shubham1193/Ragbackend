@@ -8,7 +8,7 @@ import * as dotenv from "dotenv";
 import express from 'express'
 import multer from 'multer'
 import cors from 'cors'
-
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 app.use(express.json());
@@ -18,7 +18,8 @@ app.use(cors());
 
 dotenv.config();
 
-let chain;
+// let chain;
+const userChains = {};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -31,18 +32,27 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+
+// app.post("/userId" , async(req , res) => {
+//     const id = uuidv4();
+//     res.send(id)
+// })
+
 app.post("/upload-files", upload.single("file"), async (req, res) => {
-  console.log(req.file.originalname);
+//   console.log(req.file.originalname);
   const filename = req.file.originalname;
-  chain = await processFile("./src/documents/" + filename);
-  console.log(chain)
-  res.send('success');
+  const id = uuidv4()
+  userChains[id] = await processFile("./src/documents/" + filename);
+  console.log(userChains[id])
+
+  res.json({message : "success" ,  id : id});
 });
 
 app.post("/ask-questions", async (req, res) => {
   console.log(req.body.que);
+  let id = req.body.id
   const question = req.body.que;
-  const answer = await chain.call({
+  const answer = await userChains[id].call({
     query: question
   });
 
@@ -105,3 +115,47 @@ app.listen(5001, () => {
   console.log("Server Started");
 });
 // chroma from documents is not a function error
+
+
+
+
+
+
+
+
+
+
+
+
+
+// The difference between .id and [id] in JavaScript is how they access properties of an object.
+
+// .id:
+
+// This is the dot notation for accessing a property directly.
+// It's used when you know the exact name of the property.
+// For example, if you have an object user with a property named id, you would access it like this: user.id.
+// [id]:
+
+// This is the bracket notation for accessing a property dynamically.
+// It's used when you don't know the exact name of the property beforehand, or when the property name is stored in a variable.
+// For example, if you have a variable propertyName that contains the string "id", you would access the property like this: user[propertyName].
+// In your code, you were using .id to access the chain stored in the userChains object. This assumes that the object has a property named id. If the property name is stored in a variable or determined dynamically, you would use [id] instead.
+
+// Here's an example to illustrate the difference:
+
+// JavaScript
+// const user = {
+//   id: 123,
+//   name: "John Doe"
+// };
+
+// // Using dot notation:
+// console.log(user.id); // Output: 123
+
+// // Using bracket notation:
+// const propertyName = "name";
+// console.log(user[propertyName]); // Output: "John Doe"
+// Use code with caution.
+
+// In your specific case, since the userChains object is most likely a plain object, you can use either .id or [id] to access the chain, as long as the property name is indeed "id". However, if the property name is stored in a variable or determined dynamically, you would need to use [id].
