@@ -8,16 +8,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-      
+          node-version: '20.x'
+
       - name: Install Dependencies
         run: npm install
 
-      
-      - name: Run Start check
-        run: node app.js
+      # Start the server in the background and get the process ID
+      - name: Start server
+        run: |
+          node app.js &
+          echo $! > server_pid.txt
+
+      # Add a wait time to ensure the server has started
+      - name: Wait for server to start
+        run: sleep 10
+
+      # Stop the server by killing the process
+      - name: Stop server
+        run: kill $(cat server_pid.txt)
